@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tt.cm.mapper.MovieCategoryMapper">
+    <select id="findAllCategorys" resultType="MovieCategory">
+        select * from movie_category
+    </select>
+
+    <select id="findCategoryById" resultType="MovieCategory" parameterType="long">
+        select * from movie_category where movie_category_id = #{id}
+    </select>
+
+    <select id="findOneMovieCategorys" resultType="MovieCategory" parameterType="long">
+        select * from movie_category smc, movie_to_category smtc
+        where smc.movie_category_id = smtc.movie_category_id and movie_id = #{id}
+    </select>
+
+    <update id="addCategory" parameterType="MovieCategory">
+        insert into movie_category(movie_category_name) values(#{movieCategoryName})
+    </update>
+
+    <update id="updateCategory" parameterType="MovieCategory">
+        update movie_category set movie_category_name = #{movieCategoryName} where movie_category_id = #{movieCategoryId}
+    </update>
+
+    <update id="deleteCategory" parameterType="Long">
+        delete from movie_category where movie_category_id = #{movieCategoryId}
+    </update>
+
+    <update id="addMovieToCategory" parameterType="MovieToCategory">
+        insert into movie_to_category values(#{movieId}, #{movieCategoryId})
+    </update>
+
+    <update id="deleteMovieToCategory" parameterType="MovieToCategory">
+        delete from movie_to_category where movie_id = #{movieId} and movie_category_id = #{movieCategoryId}
+    </update>
+
+    <select id="countUserMovieTypePreference" parameterType="Long" resultType="java.util.Map">
+        SELECT
+            c.movie_category_name AS typeName,  -- 电影类型名称
+            COUNT(u.user_id) AS count      -- 该类型观看次数
+        FROM
+            user u
+            LEFT JOIN ticket b ON u.user_id=b.user_id
+            LEFT JOIN session s ON b.session_id = s.session_id  -- 用户→电影票（1:N）
+            LEFT JOIN movie_to_category m ON s.movie_id = m.movie_id     -- 电影票→场次（N:1）
+            LEFT JOIN movie_category c ON m.movie_category_id = c.movie_category_id          -- 场次→电影（N:1）
+        WHERE
+            u.user_id = #{userId}  -- 传入当前用户ID
+          AND c.movie_category_id IS NOT NULL  -- 过滤无类型的无效数据
+        GROUP BY
+            c.movie_category_id, c.movie_category_name  -- 按类型分组统计
+    </select>
+</mapper>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tt.cm.mapper.CommentMapper">
+    <resultMap id="CommentMap" type="Comment">
+        <id property="commentId" column="commentId"></id>
+        <result property="userId" column="user_id"></result>
+        <result property="billId" column="bill_id"></result>
+        <result property="movieId" column="movie_id"></result>
+        <result property="star" column="star"></result>
+        <result property="commentContent" column="commentContent"></result>
+        <result property="commentTime" column="commentTime"></result>
+        <association property="user">
+            <result property="userId" column="user_id"></result>
+            <result property="userName" column="user_name"></result>
+            <result property="userPicture" column="user_picture"></result>
+        </association>
+    </resultMap>
+    <!-- 添加评论 -->
+    <insert id="addSysComment" parameterType="com.tt.cm.domain.Comment">
+        INSERT INTO comment (
+            user_id, movie_id, bill_id, commentContent, star,
+            commentTime
+        ) VALUES (
+                     #{userId}, #{movieId}, #{billId}, #{commentContent}, #{star},#{commentTime}
+
+                 )
+    </insert>
+
+    <!-- 根据电影ID查询所有评论 -->
+    <select id="findAllCommentsByMovieId" parameterType="java.lang.Long"
+            resultType="com.tt.cm.domain.Comment">
+        SELECT
+            sc.commentId AS commentId,
+            sc.user_id AS "user.userId",
+            sc.movie_id AS "movie.movieId",
+            sc.bill_id AS "ticket.billId",
+            sc.commentContent AS commentContent,
+            sc.star AS star,
+            sc.commentTime AS commentTime,
+            su.user_name AS "user.userName",
+            su.user_picture AS "user.userPicture",
+            sm.movie_name AS "movie.movieName"
+        FROM comment sc
+                 LEFT JOIN user su ON sc.user_id = su.user_id
+                 LEFT JOIN movie sm ON sc.movie_id = sm.movie_id
+        WHERE sc.movie_id = #{movieId}
+        ORDER BY sc.commentTime DESC
+    </select>
+
+    <!-- 根据订单ID查询评论 -->
+    <select id="findCommentByBillId" parameterType="java.lang.Long"
+            resultType="com.tt.cm.domain.Comment">
+        SELECT
+            sc.commentId AS commentId,
+            sc.user_id AS "userId",
+            sc.movie_id AS "movieId",
+            sc.bill_id AS billId,
+            sc.commentContent AS commentContent,
+            sc.star AS star,
+            sc.commentTime AS commentTime,
+        FROM comment sc
+        WHERE sc.bill_id = #{billId}
+    </select>
+
+    <!-- 根据用户ID查询该用户的所有评论 -->
+    <select id="findCommentsByUserId" parameterType="java.lang.Long"
+            resultType="com.tt.cm.domain.Comment">
+        SELECT
+            sc.commentId AS commentId,
+            sc.user_id AS "user.userId",
+            sc.movie_id AS "movie.movieId",
+            sc.bill_id AS billId,
+            sc.commentContent AS commentContent,
+            sc.star AS star,
+            sc.commentTime AS commentTime,
+            sm.movie_name AS "movie.movieName"
+        FROM comment sc
+                 LEFT JOIN movie sm ON sc.movie_id = sm.movie_id
+        WHERE sc.user_id = #{userId}
+        ORDER BY sc.commentTime DESC
+    </select>
+
+    <!-- 根据电影ID查询评论的平均星级 -->
+    <select id="findAverageStarByMovieId" parameterType="java.lang.Long"
+            resultType="java.lang.Double">
+        SELECT AVG(star)
+        FROM comment
+        WHERE movie_id = #{movieId}
+    </select>
+
+    <!-- 根据评论ID查询评论详情 -->
+    <select id="findCommentById" parameterType="java.lang.Long"
+            resultType="com.tt.cm.domain.Comment">
+        SELECT
+            sc.commentId AS commentId,
+            sc.user_id AS "user.userId",
+            sc.movie_id AS "movie.movieId",
+            sc.bill_id AS billId,
+            sc.commentContent AS commentContent,
+            sc.star AS star,
+            sc.commentTime AS commentTime
+        FROM comment sc
+        WHERE sc.commentId = #{commentId}
+    </select>
+
+    <!-- 更新评论 -->
+    <update id="updateSysComment" parameterType="com.tt.cm.domain.Comment">
+        UPDATE comment
+        SET comment_content = #{commentContent},
+            star = #{star},
+            update_time = NOW()
+        WHERE id = #{commentId} AND user_id = #{user.userId}
+    </update>
+
+    <!-- 删除评论（逻辑删除） -->
+    <update id="deleteSysComment" parameterType="java.lang.Long">
+        delete from comment where commentId = #{commentId}
+    </update>
+</mapper>

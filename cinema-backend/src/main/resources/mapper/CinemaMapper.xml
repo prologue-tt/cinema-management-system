@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tt.cm.mapper.CinemaMapper">
+
+    <!-- 查询影院信息，包含影院上映的所有电影信息 -->
+    <resultMap id="CinemaMap" type="Cinema">
+        <id property="cinemaId" column="cinema_id"></id>
+        <result property="cinemaName" column="cinema_name"></result>
+        <result property="hallCategoryList" column="hall_category_list"></result>
+        <result property="cinemaPicture" column="cinema_picture"></result>
+        <result property="cinemaAddress" column="cinema_address"></result>
+        <result property="cinemaPhone" column="cinema_phone"></result>
+        <result property="workStartTime" column="work_start_time"></result>
+        <result property="workEndTime" column="work_end_time"></result>
+        <collection property="movieList" ofType="Movie" column="cinema_id" select="com.tt.cm.mapper.MovieMapper.findMovieByCinemaId"></collection>
+    </resultMap>
+
+    <select id="findCinema" parameterType="Long" resultType="Cinema">
+        select * from cinema
+    </select>
+
+    <update id="updateCinema" parameterType="Cinema">
+        update cinema set
+        cinema_name = #{cinemaName}, cinema_picture = #{cinemaPicture},
+        cinema_address = #{cinemaAddress}, cinema_phone = #{cinemaPhone},
+        work_start_time = #{workStartTime}, work_end_time = #{workEndTime},
+        hall_category_list = #{hallCategoryList}
+        where cinema_id = #{cinemaId}
+    </update>
+
+    <select id="findCinemaById" parameterType="Long" resultMap="CinemaMap">
+        select * from cinema where cinema_id = #{id}
+    </select>
+
+</mapper>

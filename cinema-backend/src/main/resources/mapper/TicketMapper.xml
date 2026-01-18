@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tt.cm.mapper.TicketMapper">
+
+    <resultMap id="TicketMap" type="Ticket">
+        <id property="billId" column="bill_id"></id>
+        <result property="userId" column="user_id"></result>
+        <result property="sessionId" column="session_id"></result>
+        <association property="session" column="session_id" select="com.tt.cm.mapper.SessionMapper.findSessionById"></association>
+        <association property="user" column="user_id" select="com.tt.cm.mapper.UserMapper.findUserById"></association>
+    </resultMap>
+
+    <select id="findAllBills" parameterType="Ticket" resultMap="TicketMap">
+        select * from ticket
+        <where>
+            <if test="payState != null"> and pay_state = #{payState} </if>
+            <if test="sessionId != null and sessionId !=''"> and session_id = #{sessionId} </if>
+            <if test="queryByUserName != null and queryByUserName != ''">
+                and user_id in
+                (select user_id
+                 from user
+                 where user_name like concat('%', #{queryByUserName}, '%'))
+            </if>
+            <if test="userId != null"> and user_id = #{userId} </if>
+            <if test="createTime != null"> and create_time &gt;= #{createTime} and create_time &lt;= adddate(#{createTime}, 1) </if>
+        </where>
+        order by bill_id desc
+    </select>
+
+    <select id="findBillById" parameterType="long" resultMap="TicketMap">
+        select * from ticket where bill_id = #{id}
+    </select>
+
+    <select id="findTimeoutBill" resultMap="TicketMap">
+        select * from ticket where sysdate() >= deadline and cancel_state = 0 and pay_state = 0
+    </select>
+
+    <update id="addBill" parameterType="Ticket">
+        <!-- 将添加后的主键id传回原对象 -->
+        <selectKey keyProperty="billId" keyColumn="bill_id" resultType="long" order="AFTER">
+            select last_insert_id();
+        </selectKey>
+        insert into ticket (
+            <if test="payState != null">pay_state, </if>
+            user_id, session_id, seats, create_time, deadline
+        ) values (
+            <if test="payState != null">#{payState}, </if>
+            #{userId}, #{sessionId}, #{seats},
+            <if test="createTime != null">#{createTime},</if>
+            <if test="createTime == null">sysdate(),</if>
+            addtime(sysdate(), 15*100)
+        )
+    </update>
+
+    <update id="updateBill" parameterType="Ticket">
+        update ticket set
+        <if test="cancelState != null">cancel_state = #{cancelState}, </if>
+        <if test="payState != null">pay_state = #{payState}, </if>
+        <if test="reviewState != null">review_state = #{reviewState}, </if>
+        <if test="seats != null and seats != ''">seats = #{seats}, </if>
+        <if test="cancelTime != null ">cancel_time = #{cancelTime}, </if>
+        create_time = sysdate()
+        where bill_id = #{billId}
+    </update>
+
+    <update id="deleteBill" parameterType="long">
+        delete from ticket where bill_id = #{id}
+    </update>
+
+    <update id="updateReviewState" parameterType="long">
+        update ticket set review_state=1 where  bill_id = #{id}
+    </update>
+
+</mapper>
